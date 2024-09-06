@@ -71,7 +71,7 @@
           <li
             v-for="(task, index) in tasks"
             :key="task.id"
-            class="flex items-center justify-between"
+            class="flex items-center justify-between gap-1"
           >
             <button
               @click="toggleTask(index)"
@@ -88,30 +88,48 @@
               class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none"
             />
             <div class="flex items-center gap-4 cursor-default">
-              <p
-                v-if="task.tag === ''"
-                class="text-xs border-dashed border-2 rounded-lg p-1 self-end"
-              >
-                no tags
-              </p>
-              <p
-                v-if="task.tag === 'urgent'"
-                class="text-xs border-dashed border-2 hover:text-red-400 border-red-400 rounded-lg p-1 self-end"
-              >
-                urgent
-              </p>
-              <p
-                v-if="task.tag === 'high priority'"
-                class="text-xs border-dashed border-2 hover:text-yellow-400 border-yellow-400 rounded-lg p-1 self-end"
-              >
-                high priority
-              </p>
-              <p
-                v-if="task.tag === 'not urgent'"
-                class="text-xs border-dashed border-2 hover:text-green-400 border-green-400 rounded-lg p-1 self-end"
-              >
-                not urgent
-              </p>
+              <div v-if="task.isEditing === false" class="h-[26px]">
+                <p
+                  v-if="task.tag === ''"
+                  class="text-xs border-dashed border-2 rounded-lg p-1 self-end"
+                >
+                  no tag
+                </p>
+                <p
+                  v-if="task.tag === 'urgent'"
+                  class="text-xs border-dashed border-2 hover:text-red-400 border-red-400 rounded-lg p-1 self-end"
+                >
+                  urgent
+                </p>
+                <p
+                  v-if="task.tag === 'high priority'"
+                  class="text-xs border-dashed border-2 hover:text-yellow-400 border-yellow-400 rounded-lg p-1 self-end"
+                >
+                  high priority
+                </p>
+                <p
+                  v-if="task.tag === 'not urgent'"
+                  class="text-xs border-dashed border-2 hover:text-green-400 border-green-400 rounded-lg p-1 self-end"
+                >
+                  not urgent
+                </p>
+              </div>
+              <div v-if="task.isEditing">
+                <select
+                  v-model="task.tempTag"
+                  :class="{
+                    'border-red-400 ': task.tempTag === 'urgent',
+                    'border-green-400 ': task.tempTag === 'not urgent',
+                    'border-yellow-400 ': task.tempTag === 'high priority',
+                    'border-gray-300': task.tempTag === '' // border mặc định
+                  }"
+                  class="text-xs h-[26px] border-dashed border-2 outline-none focus:outline-none rounded-lg"
+                >
+                  <option v-for="tag in tags" :key="tag.title" :value="tag.title">
+                    {{ tag.title }}
+                  </option>
+                </select>
+              </div>
               <button @click="removeTask(index)"><i class="far fa-trash-alt"></i></button>
               <Pen
                 v-if="task.isEditing === false"
@@ -150,15 +168,22 @@ const tasks = ref([
   {
     id: 1,
     title: 'Learn VueJS',
-    completed: false,
-    tag: '',
+    completed: true,
+    tag: 'urgent',
     isEditing: false
   },
   {
     id: 2,
     title: 'Watch netflix',
-    completed: true,
-    tag: 'urgent',
+    completed: false,
+    tag: 'not urgent',
+    isEditing: false
+  },
+  {
+    id: 3,
+    title: 'Gym',
+    completed: false,
+    tag: 'high priority',
     isEditing: false
   }
 ])
@@ -167,7 +192,8 @@ const newTask = ref()
 const newTag = ref('')
 
 const editTask = (task, index) => {
-  task.tempTitle = task.title
+  tasks.value[index].tempTitle = task.title
+  tasks.value[index].tempTag = task.tag
   tasks.value[index].isEditing = true
 }
 
@@ -175,6 +201,7 @@ const saveEdit = (task, index) => {
   if (task.tempTitle.trim() !== '') {
     tasks.value[index].title = task.tempTitle.trim()
   }
+  tasks.value[index].tag = task.tempTag
   tasks.value[index].isEditing = false
 }
 
