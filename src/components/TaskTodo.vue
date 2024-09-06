@@ -55,7 +55,6 @@
               </div>
             </div>
             <div
-            
               class="button w-14 h-6 bg-[#4ec5c1] rounded-lg cursor-pointer select-none active:translate-y-2 active:[box-shadow:0_0px_0_0_#48b5b2,0_0px_0_0_#d4fffd] active:border-b-[0px] transition-all duration-150 [box-shadow:0_10px_0_0_#48b5b2,0_15px_0_0_#d4fffd] border-b-[1px] border-[#57deda]"
             >
               <span
@@ -72,16 +71,23 @@
           <li
             v-for="(task, index) in tasks"
             :key="task.id"
-            class="flex items-center justify-between "
+            class="flex items-center justify-between"
           >
             <button
               @click="toggleTask(index)"
+              v-if="task.isEditing === false"
               class=""
               :class="{ 'line-through text-gray-500': task.completed }"
             >
               {{ task.title }}
             </button>
-            <div class="flex items-center gap-4">
+            <input
+              v-if="task.isEditing"
+              v-model="task.tempTitle"
+              @keyup.enter="saveEdit(task, index)"
+              class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none"
+            />
+            <div class="flex items-center gap-4 cursor-default">
               <p
                 v-if="task.tag === ''"
                 class="text-xs border-dashed border-2 rounded-lg p-1 self-end"
@@ -107,6 +113,18 @@
                 not urgent
               </p>
               <button @click="removeTask(index)"><i class="far fa-trash-alt"></i></button>
+              <Pen
+                v-if="task.isEditing === false"
+                @click="editTask(task, index)"
+                size="16px"
+                class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+              />
+              <Check
+                @click="saveEdit(task, index)"
+                v-if="task.isEditing === true"
+                size="16"
+                class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+              />
             </div>
           </li>
         </ul>
@@ -123,6 +141,7 @@
 </template>
 
 <script setup>
+import { Check, Pen } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 
 const tags = ref([{ title: 'urgent' }, { title: 'not urgent' }, { title: 'high priority' }])
@@ -132,24 +151,35 @@ const tasks = ref([
     id: 1,
     title: 'Learn VueJS',
     completed: false,
-    tag: ''
+    tag: '',
+    isEditing: false
   },
   {
     id: 2,
     title: 'Watch netflix',
     completed: true,
-    tag: 'urgent'
-  },
-  
+    tag: 'urgent',
+    isEditing: false
+  }
 ])
 
 const newTask = ref()
 const newTag = ref('')
 
+const editTask = (task, index) => {
+  task.tempTitle = task.title
+  tasks.value[index].isEditing = true
+}
+
+const saveEdit = (task, index) => {
+  if (task.tempTitle.trim() !== '') {
+    tasks.value[index].title = task.tempTitle.trim()
+  }
+  tasks.value[index].isEditing = false
+}
+
 const selectTag = (tag) => {
   newTag.value = tag
-
-  console.log('newtag', newTag.value)
 }
 
 const toggleTask = (index) => {
@@ -163,10 +193,9 @@ const addTask = () => {
     id: tasks.value.length + 1,
     title: newTask.value.trim(),
     completed: false,
-    tag: newTag.value !== '' ? newTag.value : ''
+    tag: newTag.value !== '' ? newTag.value : '',
+    isEditing: false
   })
-
-  console.log('dfafad', tasks.value)
 
   newTask.value = ''
   newTag.value = ''
