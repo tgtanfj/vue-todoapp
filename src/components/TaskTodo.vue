@@ -9,7 +9,7 @@
       <div class="form relative">
         <input type="text" placeholder="New Task" v-model="newTask" @keyup.enter="addTask" />
         <div class="flex flex-wrap justify-center gap-6 absolute top-5 right-0">
-          <button @click="addTask" class="flex gap-1 items-center">
+          <button class="flex gap-1 items-center">
             <div
               class="relative group button w-20 h-8 bg-transparent rounded-lg cursor-pointer select-none mt-2 flex items-center justify-center"
               :class="{
@@ -33,12 +33,7 @@
                   <li
                     v-for="tag in tags"
                     :key="tag.title"
-                    @click="
-                      {
-                        selectTag(tag.title);
-                        $event.stopPropagation()
-                      }
-                    "
+                    @click="selectTag(tag.title)"
                     class="p-1 text-sm cursor-pointer rounded-lg text-black"
                     :class="{
                       'border-2 border-dashed hover:text-red-400 border-red-400':
@@ -55,6 +50,7 @@
               </div>
             </div>
             <div
+              @click="addTask"
               class="button w-14 h-6 bg-[#4ec5c1] rounded-lg cursor-pointer select-none active:translate-y-2 active:[box-shadow:0_0px_0_0_#48b5b2,0_0px_0_0_#d4fffd] active:border-b-[0px] transition-all duration-150 [box-shadow:0_10px_0_0_#48b5b2,0_15px_0_0_#d4fffd] border-b-[1px] border-[#57deda]"
             >
               <span
@@ -67,7 +63,10 @@
       </div>
       <!-- task lists -->
       <div class="taskItems">
-        <ul class="h-full max-h-[250px] overflow-y-scroll pr-4">
+        <p v-if="tasks.length === 0" class="text-center text-slate-400">
+          The task list is empty, please add a task now
+        </p>
+        <ul v-if="tasks.length > 0" class="h-full max-h-[250px] overflow-y-scroll pr-4">
           <li
             v-for="(task, index) in tasks"
             :key="task.id"
@@ -160,36 +159,20 @@
 
 <script setup>
 import { Check, Pen } from 'lucide-vue-next'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const tags = ref([{ title: 'urgent' }, { title: 'not urgent' }, { title: 'high priority' }])
-
-const tasks = ref([
-  {
-    id: 1,
-    title: 'Learn VueJS',
-    completed: true,
-    tag: 'urgent',
-    isEditing: false
-  },
-  {
-    id: 2,
-    title: 'Watch netflix',
-    completed: false,
-    tag: 'not urgent',
-    isEditing: false
-  },
-  {
-    id: 3,
-    title: 'Gym',
-    completed: false,
-    tag: 'high priority',
-    isEditing: false
-  }
-])
-
-const newTask = ref()
+const tasks = ref([])
+const newTask = ref('')
 const newTag = ref('')
+
+onMounted(() => {
+  if (localStorage.getItem('tasks')) {
+    tasks.value = JSON.parse(localStorage.getItem('tasks'))
+    return
+  }
+  return
+})
 
 const editTask = (task, index) => {
   tasks.value[index].tempTitle = task.title
@@ -200,9 +183,12 @@ const editTask = (task, index) => {
 const saveEdit = (task, index) => {
   if (task.tempTitle.trim() !== '') {
     tasks.value[index].title = task.tempTitle.trim()
+    localStorage.setItem('tasks', JSON.stringify(tasks.value))
   }
   tasks.value[index].tag = task.tempTag
   tasks.value[index].isEditing = false
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const selectTag = (tag) => {
@@ -211,6 +197,8 @@ const selectTag = (tag) => {
 
 const toggleTask = (index) => {
   tasks.value[index].completed = !tasks.value[index].completed
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const addTask = () => {
@@ -226,18 +214,26 @@ const addTask = () => {
 
   newTask.value = ''
   newTag.value = ''
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const removeTask = (index) => {
   tasks.value.splice(index, 1)
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const clearCompleted = () => {
   tasks.value = tasks.value.filter((task) => !task.completed)
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const clearAll = () => {
   tasks.value.splice(0, tasks.value.length)
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const pendingTasks = computed(() => tasks.value.filter((task) => !task.completed).length)
