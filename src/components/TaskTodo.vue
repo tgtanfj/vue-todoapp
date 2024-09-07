@@ -66,6 +66,23 @@
         <p v-if="tasks.length === 0" class="text-center text-slate-400">
           The task list is empty, please add a task now
         </p>
+        <div
+          @mouseenter="hovering = true"
+          @mouseleave="hovering = false"
+          v-if="tasks.length === 0"
+          class="group mt-4 w-full flex items-center justify-center"
+        >
+          <SmilePlus
+            size="50"
+            v-if="!hovering"
+            class="text-center text-slate-400 group-hover:text-[#4ec5c1] group-hover:scale-110 transition-all"
+          />
+          <Laugh
+            size="50"
+            v-else
+            class="text-center text-slate-400 group-hover:text-[#4ec5c1] group-hover:scale-110 transition-all"
+          />
+        </div>
         <ul v-if="tasks.length > 0" class="h-full max-h-[250px] overflow-y-scroll pr-4">
           <li
             v-for="(task, index) in tasks"
@@ -158,13 +175,15 @@
 </template>
 
 <script setup>
-import { Check, Pen } from 'lucide-vue-next'
+import { Check, Laugh, Pen, SmilePlus } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 
 const tags = ref([{ title: 'urgent' }, { title: 'not urgent' }, { title: 'high priority' }])
 const tasks = ref([])
 const newTask = ref('')
 const newTag = ref('')
+
+const hovering = ref(false)
 
 onMounted(() => {
   if (localStorage.getItem('tasks')) {
