@@ -8,15 +8,27 @@
       <!-- form -->
       <div class="form relative">
         <input
+          ref="inputRef"
+          v-show="!isSearching"
           class="py-[15px] pl-[15px] pr-[45%]"
           type="text"
-          placeholder="New Task"
+          placeholder="New Task (ctrl + b to search)"
           v-model="newTask"
+          @keyup.enter="addTask"
+        />
+        <input
+          ref="searchInputRef"
+          v-show="isSearching"
+          class="py-[15px] pl-[15px] pr-[35%]"
+          type="text"
+          placeholder="Search Task (ctrl + b to end search)"
+          v-model="searchTask"
           @keyup.enter="addTask"
         />
         <div class="flex flex-wrap justify-center gap-6 absolute top-5 right-0">
           <button class="flex gap-1 items-center">
             <div
+              v-if="!isSearching"
               class="relative group button w-20 h-8 bg-transparent rounded-lg cursor-pointer select-none mt-2 flex items-center justify-center"
               :class="{
                 'border-2 border-dashed bg-transparent hover:text-red-400 border-red-400 w-20':
@@ -57,12 +69,25 @@
             </div>
             <div
               @click="addTask"
+              v-if="!isSearching"
               class="button w-14 h-6 bg-[#4ec5c1] rounded-lg cursor-pointer select-none active:translate-y-2 active:[box-shadow:0_0px_0_0_#48b5b2,0_0px_0_0_#d4fffd] active:border-b-[0px] transition-all duration-150 [box-shadow:0_10px_0_0_#48b5b2,0_15px_0_0_#d4fffd] border-b-[1px] border-[#57deda]"
             >
               <span
                 class="flex flex-col justify-center items-center h-full text-white font-bold text-sm"
                 >add</span
               >
+            </div>
+            <div class="flex items-center gap-2">
+              <div
+                v-if="isSearching"
+                @click="toggleSearch"
+                class="button w-28 h-6 bg-[#4ec5c1] rounded-lg cursor-pointer select-none active:translate-y-2 active:[box-shadow:0_0px_0_0_#48b5b2,0_0px_0_0_#d4fffd] active:border-b-[0px] transition-all duration-150 [box-shadow:0_10px_0_0_#48b5b2,0_15px_0_0_#d4fffd] border-b-[1px] border-[#57deda]"
+              >
+                <span
+                  class="flex flex-col justify-center items-center h-full text-white font-bold text-sm"
+                  >close search</span
+                >
+              </div>
             </div>
           </button>
         </div>
@@ -89,14 +114,13 @@
             class="text-center text-slate-400 group-hover:text-[#4ec5c1] group-hover:scale-110 transition-all"
           />
         </div>
-        <ul v-if="tasks.length > 0" class="h-full max-h-[250px] overflow-y-scroll pr-4">
-          <li
-            v-for="(task, index) in tasks"
-            :key="task.id"
-            class="flex items-center justify-between gap-1"
-          >
+        <ul
+          v-show="!isSearching && tasks.length > 0"
+          class="h-full max-h-[250px] overflow-y-scroll pr-4"
+        >
+          <li v-for="task in tasks" :key="task.id" class="flex items-center justify-between gap-1">
             <button
-              @click="toggleTask(index)"
+              @click="toggleTask(task.id)"
               v-if="task.isEditing === false"
               class="truncate flex-[0.9] text-left"
               :class="{ 'line-through text-gray-500': task.completed }"
@@ -106,7 +130,7 @@
             <input
               v-if="task.isEditing"
               v-model="task.tempTitle"
-              @keyup.enter="saveEdit(task, index)"
+              @keyup.enter="saveEdit(task.id)"
               class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none flex-[0.9]"
             />
             <div class="flex items-center gap-3 cursor-default">
@@ -152,15 +176,179 @@
                   </option>
                 </select>
               </div>
-              <button @click="removeTask(index)"><i class="far fa-trash-alt"></i></button>
+              <button @click="removeTask(task.id)"><i class="far fa-trash-alt"></i></button>
               <Pen
                 v-if="task.isEditing === false"
-                @click="editTask(task, index)"
+                @click="editTask(task.id)"
                 size="16px"
                 class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
               />
               <Check
-                @click="saveEdit(task, index)"
+                @click="saveEdit(task.id)"
+                v-if="task.isEditing === true"
+                size="18"
+                class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+              />
+              <Star
+                v-if="task.isStarred === false"
+                @click="toggleStar(task.id)"
+                size="18"
+                class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
+              />
+              <Star
+                v-if="task.isStarred === true"
+                @click="toggleStar(task.id)"
+                size="18"
+                class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
+              />
+              <Dialog>
+                <DialogTrigger
+                  ><Info
+                    size="16"
+                    class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+                /></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle class="text-[#4ec5c1]">Task Information</DialogTitle>
+                    <DialogDescription>Information of a specific task</DialogDescription>
+                  </DialogHeader>
+                  <p class="w-full truncate flex items-center gap-2">
+                    <TypeOutline size="18" class="hover:text-[#4ec5c1]" />
+                    <span class="truncate">Task Title: {{ task.title }}</span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Tag size="16" class="hover:text-[#4ec5c1]" />Task Tag:
+                    <span
+                      :class="{
+                        'border-red-400 hover:text-red-400': task.tag === 'urgent',
+                        'border-green-400 hover:text-green-400': task.tag === 'not urgent',
+                        'border-yellow-400 hover:text-yellow-400': task.tag === 'high priority',
+                        'border-gray-300': task.tag === ''
+                      }"
+                      class="p-1 border-dashed border-2 outline-none focus:outline-none rounded-lg"
+                    >
+                      {{ task.tag === '' ? 'no tag' : task.tag }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <ListTodo size="18" class="hover:text-[#4ec5c1]" />Task Status:
+                    <span
+                      :class="{
+                        'text-green-400': task.completed === true,
+                        'text-red-400': task.completed === false
+                      }"
+                    >
+                      {{ task.completed === true ? 'Completed' : 'Not Completed' }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
+                    <Star v-if="task.isStarred === false" size="18" class="text-black" />
+                    <Star
+                      v-if="task.isStarred === true"
+                      size="18"
+                      class="text-yellow-300 fill-[#f8df56] transition-all"
+                    />
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Clock size="18" class="hover:text-[#4ec5c1]" />Created At:
+                    <span>
+                      {{ formatDate(task.createdAt) }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <CalendarClock size="18" class="hover:text-[#4ec5c1]" />Updated At:
+                    <span>
+                      {{
+                        task.updatedAt !== null
+                          ? formatDate(task.updatedAt)
+                          : 'Task has not been updated yet'
+                      }}
+                    </span>
+                  </p>
+                  <DialogFooter>
+                    <DialogClose class="hover:text-[#4ec5c1]">Close</DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </li>
+        </ul>
+        <ul
+          v-show="isSearching && searchedTasks.length > 0"
+          class="h-full max-h-[250px] overflow-y-scroll pr-4"
+        >
+          <li
+            v-for="task in searchedTasks"
+            :key="task.id"
+            class="flex items-center justify-between gap-1"
+          >
+            <button
+              @click="toggleTask(task.id)"
+              v-if="task.isEditing === false"
+              class="truncate flex-[0.9] text-left"
+              :class="{ 'line-through text-gray-500': task.completed }"
+            >
+              {{ task.title }}
+            </button>
+            <input
+              v-if="task.isEditing"
+              v-model="task.tempTitle"
+              @keyup.enter="saveEdit(task.id)"
+              class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none flex-[0.9]"
+            />
+            <div class="flex items-center gap-3 cursor-default">
+              <div v-if="task.isEditing === false" class="h-[26px]">
+                <p
+                  v-if="task.tag === ''"
+                  class="text-xs border-dashed border-2 rounded-lg p-1 self-end"
+                >
+                  no tag
+                </p>
+                <p
+                  v-if="task.tag === 'urgent'"
+                  class="text-xs border-dashed border-2 hover:text-red-400 border-red-400 rounded-lg p-1 self-end"
+                >
+                  urgent
+                </p>
+                <p
+                  v-if="task.tag === 'high priority'"
+                  class="text-xs border-dashed border-2 hover:text-yellow-400 border-yellow-400 rounded-lg p-1 self-end"
+                >
+                  high priority
+                </p>
+                <p
+                  v-if="task.tag === 'not urgent'"
+                  class="text-xs border-dashed border-2 hover:text-green-400 border-green-400 rounded-lg p-1 self-end"
+                >
+                  not urgent
+                </p>
+              </div>
+              <div v-if="task.isEditing">
+                <select
+                  v-model="task.tempTag"
+                  :class="{
+                    'border-red-400 ': task.tempTag === 'urgent',
+                    'border-green-400 ': task.tempTag === 'not urgent',
+                    'border-yellow-400 ': task.tempTag === 'high priority',
+                    'border-gray-300': task.tempTag === ''
+                  }"
+                  class="text-xs h-[26px] border-dashed border-2 outline-none focus:outline-none rounded-lg"
+                >
+                  <option v-for="tag in tags" :key="tag.title" :value="tag.title">
+                    {{ tag.title }}
+                  </option>
+                </select>
+              </div>
+              <button @click="removeTask(task.id)"><i class="far fa-trash-alt"></i></button>
+              <Pen
+                v-if="task.isEditing === false"
+                @click="editTask(task.id)"
+                size="16px"
+                class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+              />
+              <Check
+                @click="saveEdit(task.id)"
                 v-if="task.isEditing === true"
                 size="18"
                 class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
@@ -287,16 +475,23 @@ import {
   Tag,
   TypeOutline
 } from 'lucide-vue-next'
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import DialogClose from './ui/dialog/DialogClose.vue'
 import moment from 'moment'
+import debounce from 'lodash/debounce'
+import { v4 as uuidv4 } from 'uuid'
 
 const tags = ref([{ title: 'urgent' }, { title: 'not urgent' }, { title: 'high priority' }])
 const tasks = ref([])
+const searchedTasks = ref([])
 const newTask = ref('')
+const searchTask = ref('')
 const newTag = ref('')
-
+const isSearching = ref(false)
 const hovering = ref(false)
+
+const searchInputRef = ref(null)
+const inputRef = ref(null)
 
 onMounted(() => {
   if (localStorage.getItem('tasks')) {
@@ -304,6 +499,57 @@ onMounted(() => {
     return
   }
   return
+})
+
+const handleKeyPress = (event) => {
+  if (event.ctrlKey && event.key === 'b') {
+    event.preventDefault()
+    toggleSearch()
+  }
+}
+
+const toggleSearch = () => {
+  isSearching.value = !isSearching.value
+  if (!isSearching.value) {
+    searchedTasks.value = tasks.value
+    nextTick(() => {
+      inputRef.value.focus()
+    })
+  } else {
+    searchTasks()
+    nextTick(() => {
+      searchInputRef.value.focus()
+    })
+  }
+  // searchTask.value = ''
+}
+
+const searchTasks = () => {
+  if (searchTask.value.trim() === '') {
+    searchedTasks.value = tasks.value
+  } else {
+    searchedTasks.value = tasks.value.filter((task) =>
+      task.title.toLowerCase().includes(searchTask.value.toLowerCase())
+    )
+  }
+}
+
+const debouncedSearch = debounce(searchTasks, 300)
+
+watch(searchTask, () => {
+  debouncedSearch()
+})
+
+onMounted(() => {
+  searchedTasks.value = tasks.value
+})
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyPress)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress)
 })
 
 const toggleStar = (taskId) => {
@@ -318,40 +564,49 @@ const toggleStar = (taskId) => {
   }
 }
 
-const editTask = (task, index) => {
-  tasks.value[index].tempTitle = task.title
-  tasks.value[index].tempTag = task.tag
-  tasks.value[index].isEditing = true
+const editTask = (taskId) => {
+  const task = tasks.value.find((task) => task.id === taskId)
+  if (task) {
+    task.tempTitle = task.title
+    task.tempTag = task.tag
+    task.isEditing = true
+  }
 }
 
 function formatDate(date) {
   return moment(date).format('LLLL')
 }
 
-const saveEdit = (task, index) => {
-  if (task.tempTitle.trim() !== '') {
-    tasks.value[index].title = task.tempTitle.trim()
+const saveEdit = (taskId) => {
+  const task = tasks.value.find((task) => task.id === taskId)
+  if (task) {
+    if (task.tempTitle.trim() !== '') {
+      task.title = task.tempTitle.trim()
+    }
+    task.tag = task.tempTag
+    task.isEditing = false
+    task.updatedAt = new Date()
+
     localStorage.setItem('tasks', JSON.stringify(tasks.value))
   }
-  tasks.value[index].tag = task.tempTag
-  tasks.value[index].isEditing = false
-  tasks.value[index].updatedAt = new Date()
-
-  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const selectTag = (tag) => {
   newTag.value = tag
 }
 
-const toggleTask = (index) => {
-  tasks.value[index].completed = !tasks.value[index].completed
-  tasks.value[index].updatedAt = new Date()
+const toggleTask = (id) => {
+  const task = tasks.value.find((task) => task.id === id)
 
-  localStorage.setItem('tasks', JSON.stringify(tasks.value))
+  if (task) {
+    task.completed = !task.completed
+    task.updatedAt = new Date()
 
-  if (allTasksCompleted.value) {
-    fireConfetti()
+    localStorage.setItem('tasks', JSON.stringify(tasks.value))
+
+    if (allTasksCompleted.value) {
+      fireConfetti()
+    }
   }
 }
 
@@ -359,7 +614,7 @@ const addTask = () => {
   if (newTask.value.trim() === '') return
 
   tasks.value.push({
-    id: tasks.value.length + 1,
+    id: uuidv4(),
     title: newTask.value.trim(),
     completed: false,
     tag: newTag.value !== '' ? newTag.value : '',
@@ -379,10 +634,16 @@ const addTask = () => {
   }
 }
 
-const removeTask = (index) => {
-  tasks.value.splice(index, 1)
+const removeTask = (id) => {
+  const index = tasks.value.findIndex((task) => task.id === id)
+  const index2 = searchedTasks.value.findIndex((task) => task.id === id)
 
-  localStorage.setItem('tasks', JSON.stringify(tasks.value))
+  if (index !== -1) {
+    tasks.value.splice(index, 1)
+    searchedTasks.value.splice(index2, 1)
+
+    localStorage.setItem('tasks', JSON.stringify(tasks.value))
+  }
 }
 
 const clearCompleted = () => {
