@@ -165,7 +165,18 @@
                 size="18"
                 class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
               />
-
+              <Star
+                v-if="task.isStarred === false"
+                @click="toggleStar(task.id)"
+                size="18"
+                class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
+              />
+              <Star
+                v-if="task.isStarred === true"
+                @click="toggleStar(task.id)"
+                size="18"
+                class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
+              />
               <Dialog>
                 <DialogTrigger
                   ><Info
@@ -205,6 +216,15 @@
                     >
                       {{ task.completed === true ? 'Completed' : 'Not Completed' }}
                     </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
+                    <Star v-if="task.isStarred === false" size="18" class="text-black" />
+                    <Star
+                      v-if="task.isStarred === true"
+                      size="18"
+                      class="text-yellow-300 fill-[#f8df56] transition-all"
+                    />
                   </p>
                   <p class="cursor-default flex items-center gap-2">
                     <Clock size="18" class="hover:text-[#4ec5c1]" />Created At:
@@ -254,6 +274,7 @@ import {
 } from '@/components/ui/dialog'
 import confetti from 'canvas-confetti'
 import {
+  Bookmark,
   CalendarClock,
   Check,
   Clock,
@@ -262,6 +283,7 @@ import {
   ListTodo,
   Pen,
   SmilePlus,
+  Star,
   Tag,
   TypeOutline
 } from 'lucide-vue-next'
@@ -283,6 +305,18 @@ onMounted(() => {
   }
   return
 })
+
+const toggleStar = (taskId) => {
+  const taskIndex = tasks.value.findIndex((task) => task.id === taskId)
+
+  if (taskIndex !== -1) {
+    tasks.value[taskIndex].isStarred = !tasks.value[taskIndex].isStarred
+    tasks.value[taskIndex].updatedAt = new Date()
+    tasks.value.sort((a, b) => b.isStarred - a.isStarred)
+
+    localStorage.setItem('tasks', JSON.stringify(tasks.value))
+  }
+}
 
 const editTask = (task, index) => {
   tasks.value[index].tempTitle = task.title
@@ -331,7 +365,8 @@ const addTask = () => {
     tag: newTag.value !== '' ? newTag.value : '',
     isEditing: false,
     createdAt: new Date(),
-    updatedAt: null
+    updatedAt: null,
+    isStarred: false
   })
 
   newTask.value = ''
