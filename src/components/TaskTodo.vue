@@ -7,7 +7,13 @@
       </div>
       <!-- form -->
       <div class="form relative">
-        <input class="py-[15px] pl-[15px] pr-[45%]" type="text" placeholder="New Task" v-model="newTask" @keyup.enter="addTask" />
+        <input
+          class="py-[15px] pl-[15px] pr-[45%]"
+          type="text"
+          placeholder="New Task"
+          v-model="newTask"
+          @keyup.enter="addTask"
+        />
         <div class="flex flex-wrap justify-center gap-6 absolute top-5 right-0">
           <button class="flex gap-1 items-center">
             <div
@@ -101,9 +107,9 @@
               v-if="task.isEditing"
               v-model="task.tempTitle"
               @keyup.enter="saveEdit(task, index)"
-              class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none"
+              class="border-b-2 border-[#4ec5c1] outline-none focus:outline-none flex-[0.9]"
             />
-            <div class="flex items-center gap-4 cursor-default">
+            <div class="flex items-center gap-3 cursor-default">
               <div v-if="task.isEditing === false" class="h-[26px]">
                 <p
                   v-if="task.tag === ''"
@@ -137,7 +143,7 @@
                     'border-red-400 ': task.tempTag === 'urgent',
                     'border-green-400 ': task.tempTag === 'not urgent',
                     'border-yellow-400 ': task.tempTag === 'high priority',
-                    'border-gray-300': task.tempTag === '' // border mặc định
+                    'border-gray-300': task.tempTag === ''
                   }"
                   class="text-xs h-[26px] border-dashed border-2 outline-none focus:outline-none rounded-lg"
                 >
@@ -156,9 +162,71 @@
               <Check
                 @click="saveEdit(task, index)"
                 v-if="task.isEditing === true"
-                size="16"
+                size="18"
                 class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
               />
+
+              <Dialog>
+                <DialogTrigger
+                  ><Info
+                    size="16"
+                    class="hover:text-[#4ec5c1] transition-all duration-300 cursor-pointer"
+                /></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle class="text-[#4ec5c1]">Task Information</DialogTitle>
+                    <DialogDescription>Information of a specific task</DialogDescription>
+                  </DialogHeader>
+                  <p class="w-full truncate flex items-center gap-2">
+                    <TypeOutline size="18" class="hover:text-[#4ec5c1]" />
+                    <span class="truncate">Task Title: {{ task.title }}</span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Tag size="16" class="hover:text-[#4ec5c1]" />Task Tag:
+                    <span
+                      :class="{
+                        'border-red-400 hover:text-red-400': task.tag === 'urgent',
+                        'border-green-400 hover:text-green-400': task.tag === 'not urgent',
+                        'border-yellow-400 hover:text-yellow-400': task.tag === 'high priority',
+                        'border-gray-300': task.tag === ''
+                      }"
+                      class="p-1 border-dashed border-2 outline-none focus:outline-none rounded-lg"
+                    >
+                      {{ task.tag === '' ? 'no tag' : task.tag }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <ListTodo size="18" class="hover:text-[#4ec5c1]" />Task Status:
+                    <span
+                      :class="{
+                        'text-green-400': task.completed === true,
+                        'text-red-400': task.completed === false
+                      }"
+                    >
+                      {{ task.completed === true ? 'Completed' : 'Not Completed' }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <Clock size="18" class="hover:text-[#4ec5c1]" />Created At:
+                    <span>
+                      {{ formatDate(task.createdAt) }}
+                    </span>
+                  </p>
+                  <p class="cursor-default flex items-center gap-2">
+                    <CalendarClock size="18" class="hover:text-[#4ec5c1]" />Updated At:
+                    <span>
+                      {{
+                        task.updatedAt !== null
+                          ? formatDate(task.updatedAt)
+                          : 'Task has not been updated yet'
+                      }}
+                    </span>
+                  </p>
+                  <DialogFooter>
+                    <DialogClose class="hover:text-[#4ec5c1]">Close</DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </li>
         </ul>
@@ -175,9 +243,31 @@
 </template>
 
 <script setup>
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import confetti from 'canvas-confetti'
-import { Check, Laugh, Pen, SmilePlus } from 'lucide-vue-next'
+import {
+  CalendarClock,
+  Check,
+  Clock,
+  Info,
+  Laugh,
+  ListTodo,
+  Pen,
+  SmilePlus,
+  Tag,
+  TypeOutline
+} from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
+import DialogClose from './ui/dialog/DialogClose.vue'
+import moment from 'moment'
 
 const tags = ref([{ title: 'urgent' }, { title: 'not urgent' }, { title: 'high priority' }])
 const tasks = ref([])
@@ -200,6 +290,10 @@ const editTask = (task, index) => {
   tasks.value[index].isEditing = true
 }
 
+function formatDate(date) {
+  return moment(date).format('LLLL')
+}
+
 const saveEdit = (task, index) => {
   if (task.tempTitle.trim() !== '') {
     tasks.value[index].title = task.tempTitle.trim()
@@ -207,6 +301,7 @@ const saveEdit = (task, index) => {
   }
   tasks.value[index].tag = task.tempTag
   tasks.value[index].isEditing = false
+  tasks.value[index].updatedAt = new Date()
 
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
@@ -217,11 +312,12 @@ const selectTag = (tag) => {
 
 const toggleTask = (index) => {
   tasks.value[index].completed = !tasks.value[index].completed
+  tasks.value[index].updatedAt = new Date()
 
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
 
   if (allTasksCompleted.value) {
-    fireConfetti();
+    fireConfetti()
   }
 }
 
@@ -233,7 +329,9 @@ const addTask = () => {
     title: newTask.value.trim(),
     completed: false,
     tag: newTag.value !== '' ? newTag.value : '',
-    isEditing: false
+    isEditing: false,
+    createdAt: new Date(),
+    updatedAt: null
   })
 
   newTask.value = ''
@@ -242,7 +340,7 @@ const addTask = () => {
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
 
   if (allTasksCompleted.value) {
-    fireConfetti();
+    fireConfetti()
   }
 }
 
@@ -265,16 +363,16 @@ const clearAll = () => {
 }
 
 const allTasksCompleted = computed(() => {
-  return tasks.value.length > 0 && tasks.value.every(task => task.completed);
-});
+  return tasks.value.length > 0 && tasks.value.every((task) => task.completed)
+})
 
 const pendingTasks = computed(() => tasks.value.filter((task) => !task.completed).length)
 
 const fireConfetti = () => {
   confetti({
-  particleCount: 400,
-  spread: 400,
-  origin: { y: 0.6 }
-});
+    particleCount: 400,
+    spread: 400,
+    origin: { y: 0.6 }
+  })
 }
 </script>
