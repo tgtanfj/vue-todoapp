@@ -7,7 +7,7 @@
       </div>
       <!-- form -->
       <div class="form relative">
-        <input type="text" placeholder="New Task" v-model="newTask" @keyup.enter="addTask" />
+        <input class="py-[15px] pl-[15px] pr-[45%]" type="text" placeholder="New Task" v-model="newTask" @keyup.enter="addTask" />
         <div class="flex flex-wrap justify-center gap-6 absolute top-5 right-0">
           <button class="flex gap-1 items-center">
             <div
@@ -92,7 +92,7 @@
             <button
               @click="toggleTask(index)"
               v-if="task.isEditing === false"
-              class=""
+              class="truncate flex-[0.9] text-left"
               :class="{ 'line-through text-gray-500': task.completed }"
             >
               {{ task.title }}
