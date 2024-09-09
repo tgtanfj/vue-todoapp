@@ -175,6 +175,7 @@
 </template>
 
 <script setup>
+import confetti from 'canvas-confetti'
 import { Check, Laugh, Pen, SmilePlus } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 
@@ -218,6 +219,10 @@ const toggleTask = (index) => {
   tasks.value[index].completed = !tasks.value[index].completed
 
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
+
+  if (allTasksCompleted.value) {
+    fireConfetti();
+  }
 }
 
 const addTask = () => {
@@ -235,6 +240,10 @@ const addTask = () => {
   newTag.value = ''
 
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
+
+  if (allTasksCompleted.value) {
+    fireConfetti();
+  }
 }
 
 const removeTask = (index) => {
@@ -255,7 +264,17 @@ const clearAll = () => {
   localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
-const pendingTasks = computed(() => tasks.value.filter((task) => !task.completed).length)
-</script>
+const allTasksCompleted = computed(() => {
+  return tasks.value.length > 0 && tasks.value.every(task => task.completed);
+});
 
-<style scoped></style>
+const pendingTasks = computed(() => tasks.value.filter((task) => !task.completed).length)
+
+const fireConfetti = () => {
+  confetti({
+  particleCount: 400,
+  spread: 400,
+  origin: { y: 0.6 }
+});
+}
+</script>
