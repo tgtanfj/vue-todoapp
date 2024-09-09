@@ -194,12 +194,14 @@
                 @click="toggleStar(task.id)"
                 size="18"
                 class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
+                :class="{'star-effect': effectTaskId === task.id}"
               />
               <Star
                 v-if="task.isStarred === true"
                 @click="toggleStar(task.id)"
                 size="18"
                 class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
+                :class="{'star-effect': effectTaskId === task.id}"
               />
               <Dialog>
                 <DialogTrigger
@@ -243,11 +245,12 @@
                   </p>
                   <p class="cursor-default flex items-center gap-2">
                     <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
-                    <Star v-if="task.isStarred === false" size="18" class="text-black" />
+                    <Star v-if="task.isStarred === false" size="18" class="text-black" :class="{'star-effect': effectTaskId === task.id}"/>
                     <Star
                       v-if="task.isStarred === true"
                       size="18"
                       class="text-yellow-300 fill-[#f8df56] transition-all"
+                      :class="{'star-effect': effectTaskId === task.id}"
                     />
                   </p>
                   <p class="cursor-default flex items-center gap-2">
@@ -358,12 +361,14 @@
                 @click="toggleStar(task.id)"
                 size="18"
                 class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
+                :class="{'star-effect': effectTaskId === task.id}"
               />
               <Star
                 v-if="task.isStarred === true"
                 @click="toggleStar(task.id)"
                 size="18"
                 class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
+                :class="{'star-effect': effectTaskId === task.id}"
               />
               <Dialog>
                 <DialogTrigger
@@ -407,11 +412,13 @@
                   </p>
                   <p class="cursor-default flex items-center gap-2">
                     <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
-                    <Star v-if="task.isStarred === false" size="18" class="text-black" />
+                    <Star v-if="task.isStarred === false" size="18" class="text-black" 
+                    :class="{'star-effect': effectTaskId === task.id}"/>
                     <Star
                       v-if="task.isStarred === true"
                       size="18"
                       class="text-yellow-300 fill-[#f8df56] transition-all"
+                      :class="{'star-effect': effectTaskId === task.id}"
                     />
                   </p>
                   <p class="cursor-default flex items-center gap-2">
@@ -551,9 +558,16 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress)
 })
-
+const effectTaskId = ref(null);
 const toggleStar = (taskId) => {
   const taskIndex = tasks.value.findIndex((task) => task.id === taskId)
+
+  effectTaskId.value = taskId;
+
+// Remove effect class after 1 second
+setTimeout(() => {
+  effectTaskId.value = null;
+}, 1000);
 
   if (taskIndex !== -1) {
     tasks.value[taskIndex].isStarred = !tasks.value[taskIndex].isStarred
@@ -672,3 +686,24 @@ const fireConfetti = () => {
   })
 }
 </script>
+
+<style scoped>
+@keyframes star-pulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(255, 215, 0, 0));
+  }
+  50% {
+    transform: scale(1.2);
+    filter: brightness(1.5) drop-shadow(0 0 20px rgba(255, 215, 0, 0.7));
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(255, 215, 0, 0));
+  }
+}
+
+.star-effect {
+  animation: star-pulse 0.6s ease-out;
+}
+</style>
