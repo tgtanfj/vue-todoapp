@@ -194,14 +194,14 @@
                 @click="toggleStar(task.id)"
                 size="18"
                 class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
-                :class="{'star-effect': effectTaskId === task.id}"
+                :class="{ 'star-effect': effectTaskId === task.id }"
               />
               <Star
                 v-if="task.isStarred === true"
                 @click="toggleStar(task.id)"
                 size="18"
                 class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
-                :class="{'star-effect': effectTaskId === task.id}"
+                :class="{ 'star-effect': effectTaskId === task.id }"
               />
               <Dialog>
                 <DialogTrigger
@@ -245,12 +245,17 @@
                   </p>
                   <p class="cursor-default flex items-center gap-2">
                     <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
-                    <Star v-if="task.isStarred === false" size="18" class="text-black" :class="{'star-effect': effectTaskId === task.id}"/>
+                    <Star
+                      v-if="task.isStarred === false"
+                      size="18"
+                      class="text-black"
+                      :class="{ 'star-effect': effectTaskId === task.id }"
+                    />
                     <Star
                       v-if="task.isStarred === true"
                       size="18"
                       class="text-yellow-300 fill-[#f8df56] transition-all"
-                      :class="{'star-effect': effectTaskId === task.id}"
+                      :class="{ 'star-effect': effectTaskId === task.id }"
                     />
                   </p>
                   <p class="cursor-default flex items-center gap-2">
@@ -361,14 +366,14 @@
                 @click="toggleStar(task.id)"
                 size="18"
                 class="hover:text-yellow-300 text-black hover:fill-[#f8df56] transition-all cursor-pointer"
-                :class="{'star-effect': effectTaskId === task.id}"
+                :class="{ 'star-effect': effectTaskId === task.id }"
               />
               <Star
                 v-if="task.isStarred === true"
                 @click="toggleStar(task.id)"
                 size="18"
                 class="text-yellow-300 fill-[#f8df56] transition-all cursor-pointer"
-                :class="{'star-effect': effectTaskId === task.id}"
+                :class="{ 'star-effect': effectTaskId === task.id }"
               />
               <Dialog>
                 <DialogTrigger
@@ -412,13 +417,17 @@
                   </p>
                   <p class="cursor-default flex items-center gap-2">
                     <Bookmark size="18" class="hover:text-[#4ec5c1]" />Starred:
-                    <Star v-if="task.isStarred === false" size="18" class="text-black" 
-                    :class="{'star-effect': effectTaskId === task.id}"/>
+                    <Star
+                      v-if="task.isStarred === false"
+                      size="18"
+                      class="text-black"
+                      :class="{ 'star-effect': effectTaskId === task.id }"
+                    />
                     <Star
                       v-if="task.isStarred === true"
                       size="18"
                       class="text-yellow-300 fill-[#f8df56] transition-all"
-                      :class="{'star-effect': effectTaskId === task.id}"
+                      :class="{ 'star-effect': effectTaskId === task.id }"
                     />
                   </p>
                   <p class="cursor-default flex items-center gap-2">
@@ -558,16 +567,15 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyPress)
 })
-const effectTaskId = ref(null);
+const effectTaskId = ref(null)
 const toggleStar = (taskId) => {
   const taskIndex = tasks.value.findIndex((task) => task.id === taskId)
 
-  effectTaskId.value = taskId;
+  effectTaskId.value = taskId
 
-// Remove effect class after 1 second
-setTimeout(() => {
-  effectTaskId.value = null;
-}, 1000);
+  setTimeout(() => {
+    effectTaskId.value = null
+  }, 1000)
 
   if (taskIndex !== -1) {
     tasks.value[taskIndex].isStarred = !tasks.value[taskIndex].isStarred
@@ -650,14 +658,19 @@ const addTask = () => {
 
 const removeTask = (id) => {
   const index = tasks.value.findIndex((task) => task.id === id)
-  const index2 = searchedTasks.value.findIndex((task) => task.id === id)
 
   if (index !== -1) {
     tasks.value.splice(index, 1)
-    searchedTasks.value.splice(index2, 1)
-
-    localStorage.setItem('tasks', JSON.stringify(tasks.value))
   }
+
+  if (isSearching.value) {
+    const index2 = searchedTasks.value.findIndex((task) => task.id === id)
+    if (index2 !== -1) {
+      searchedTasks.value.splice(index2, 1)
+    }
+  }
+
+  localStorage.setItem('tasks', JSON.stringify(tasks.value))
 }
 
 const clearCompleted = () => {
